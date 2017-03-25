@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:tx="http://www.springframework.org/schema/tx">
+	
+	<!-- @Controller, @Service, @Configuration, etc. -->
+	<context:component-scan base-package="com.demo" />
+	<bean id="freemarkerConfig" class="org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer">
+		<property name="templateLoaderPath" value="/WEB-INF/views/"/>
+	</bean>
+	<bean id="viewResolver" class="org.springframework.web.servlet.view.freemarker.FreeMarkerViewResolver">
+		<property name="cache" value="true"/>
+		<property name="prefix" value=""/>
+		<property name="suffix" value=".ftl"/>
+	</bean>
+	<!-- 引入jdbc配置文件 -->  
+	<bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+			<list>
+				<value>classpath:jdbc.properties</value>
+				<!--要是有多个配置文件，只需在这里继续添加即可 -->
+			</list>
+		</property>
+	</bean>
+	<!-- 配置数据源 -->
+	<bean primary="true" id="dataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
+		<property name="poolName" value="${poolName}" />
+		<property name="driverClassName" value="${driverClassName}" />
+		<property name="jdbcUrl" value="${jdbcUrl}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+		<property name="maximumPoolSize" value="${jdbc.max.pool.size}" />
+		<property name="dataSourceProperties">
+			<props>
+				<prop key="connectTimeout">3000</prop>
+				<prop key="useUnicode">true</prop>
+				<prop key="characterEncoding">utf8</prop>
+				<prop key="characterSetResults">utf8</prop>
+				<prop key="useCompression">false</prop>
+				<prop key="tcpNoDelay">true</prop>
+				<prop key="tcpKeepAlive">true</prop>
+				<prop key="sessionVariables">time_zone="+08:00"</prop>
+			</props>
+		</property>
+	</bean>
+	<!-- sql session -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	 
+	<!-- Mapper的自动注入 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.demo.mapper" />
+	</bean>
+	<!-- 避免sql注入 
+	<bean scope="prototype" class="org.apache.commons.configuration2.DatabaseConfiguration">
+		<property name="dataSource" ref="dataSource" />
+		<property name="configurationNameColumn" value="config" />
+		<property name="keyColumn" value="name" />
+		<property name="valueColumn" value="value" />
+	</bean>
+	-->
+	
+	<context:annotation-config />  
+	<mvc:annotation-driven/>
+	<mvc:annotation-driven>
+		<mvc:message-converters register-defaults="false">
+			<bean id="fastJsonHttpMessageConverter" class="com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter">
+				<property name="supportedMediaTypes">
+					<list>
+						<value>text/html;charset=UTF-8</value>
+						<value>application/json;charset=UTF-8</value>
+					</list>
+				</property>
+			</bean>
+		</mvc:message-converters>
+	</mvc:annotation-driven>
+</beans>
